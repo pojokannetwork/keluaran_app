@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "io.flutter.examples.hello_world"
+    namespace = "com.pojokannetwork.keluaran_app"
     compileSdk = flutter.compileSdkVersion
 
     // Flutter's CI installs the NDK at a non-standard path.
@@ -26,18 +26,39 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.flutter.examples.hello_world"
+        applicationId = "com.pojokannetwork.keluaran_app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    // Load keystore properties for release signing
+    val keystorePropertiesFile = rootProject.file("key.properties")
+    val keystoreProperties = java.util.Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
+    }
+
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile") ?: "keystore.jks")
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         named("release") {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Use release signing config if key.properties exists, otherwise debug keys
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
